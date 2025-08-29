@@ -56,7 +56,7 @@ async def translate_text(
 
 
 @router.get("/supported_languages", response_model=dict)
-async def get_supported_languages():
+def get_supported_languages():
     return {
         "supported_language_pairs": get_supported_language_pairs(),
         "language_codes": LANGUAGE_CODES
