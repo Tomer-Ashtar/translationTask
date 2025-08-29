@@ -5,7 +5,7 @@ Translation and language routes for the FastAPI application.
 import logging
 from fastapi import APIRouter, Depends
 
-from app.core.exceptions import ServiceNotAvailableError, TranslationError
+from app.core.exceptions import TranslationError, TranslationFailedError
 from app.models.schemas import TranslationRequest, TranslationResponse
 from app.services.translation_service import TranslationService
 from app.core.translation_config import LANGUAGE_CODES, get_supported_language_pairs
@@ -42,12 +42,17 @@ async def translate_text(
             original_text = request.text
         )
     
+    except TranslationError:
+        # Just re-raise any TranslationError (including ServiceNotAvailableError) as is
+        # This preserves the original error message and type
+        raise
     except Exception as e:
-        logger.error(f"Translation error: {str(e)}")
-        raise TranslationError("Translation failed")
+        # Wrap any other unexpected error in TranslationFailedError
+        logger.error(f"Unexpected translation error: {str(e)}")
+        raise TranslationFailedError("Translation failed due to an unexpected error")
 
 
-@router.get("/supported_languages", response_model = dict)
+@router.get("/supported-languages", response_model = dict)
 def get_supported_languages():
     return {
         "supported_language_pairs": get_supported_language_pairs(),

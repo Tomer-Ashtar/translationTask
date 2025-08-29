@@ -7,8 +7,13 @@ import random
 from fastapi.testclient import TestClient
 from unittest.mock import Mock, patch
 
-from app.main import app, translation_service
-from app.core.exceptions import TranslationError
+from app.main import app
+from app.core.service_init import translation_service
+from app.core.exceptions import (
+    TranslationError,
+    TranslationFailedError,
+    ServiceNotAvailableError
+)
 from app.core.translation_config import LANGUAGE_CODES, SUPPORTED_MODELS
 
 
@@ -20,7 +25,7 @@ class TestTranslationAPI:
         self.client = TestClient(app)
         self.available_languages = list(LANGUAGE_CODES.keys())
     
-    @patch('app.main.translation_service')
+    @patch('app.core.service_init.translation_service')
     def test_translate_success(self, mock_service):
         """Test successful translation."""
         # Get a valid language pair from supported models
@@ -85,7 +90,7 @@ class TestTranslationAPI:
             "target_lang": target_lang
         })
         assert response.status_code == 422
-        assert "ensure this value has at most 500 characters" in response.json()["detail"][0]["msg"].lower()
+        assert "should have at most 500 characters" in response.json()["detail"][0]["msg"].lower()
         
         # Test text exceeding word limit (10 words)
         too_many_words = "This is a text with more than ten words to test the word limit validation"
@@ -97,38 +102,41 @@ class TestTranslationAPI:
         assert response.status_code == 422
         assert "exceeds maximum length of 10 words" in response.json()["detail"][0]["msg"].lower()
     
-    @patch('app.main.translation_service')
+    @patch('app.core.service_init.translation_service')
     def test_translate_errors(self, mock_service):
         """Test translation error handling."""
         # Get a valid language pair
         source_lang, target_lang = random.choice(list(SUPPORTED_MODELS.keys())).split('-')
         
-        # Test word limit
-        mock_service.translate.side_effect = ValueError("Text exceeds maximum length")
+        # Test general translation error
+        mock_service.translate.side_effect = TranslationFailedError("Model failed to generate translation")
         response = self.client.post("translations/translate", json={
-            "text": "This is a very long text that exceeds the limit",
+            "text": "This is a test text",
             "source_lang": source_lang,
             "target_lang": target_lang
         })
-        assert response.status_code == 400
+        assert response.status_code == 500
+        assert response.json()["error"] == "Translation Error"
+        assert "Model failed to generate translation" in response.json()["detail"]
         
-        # Test service error
-        mock_service.translate.side_effect = TranslationError("Translation failed")
+        # Test service unavailable error
+        mock_service.translate.side_effect = ServiceNotAvailableError("Service not available")
         response = self.client.post("translations/translate", json={
             "text": "Hello",
             "source_lang": source_lang,
             "target_lang": target_lang
         })
-        assert response.status_code == 500
+        assert response.status_code == 503
+        assert response.json()["error"] == "Service Unavailable"
     
-    @patch('app.main.translation_service')
+    @patch('app.core.service_init.translation_service')
     def test_supported_languages(self, mock_service):
         """Test supported languages endpoint."""
         # Create random supported language pairs
         random_pairs = dict(random.sample(SUPPORTED_MODELS.items(), k=len(SUPPORTED_MODELS)))
         mock_service.get_supported_language_pairs.return_value = random_pairs
         
-        response = self.client.get("/supported-languages")
+        response = self.client.get("/translations/supported-languages")
         assert response.status_code == 200
         data = response.json()
         assert "supported_language_pairs" in data

@@ -8,14 +8,22 @@ from fastapi import Request, HTTPException, status
 from fastapi.responses import JSONResponse
 
 
-class ServiceNotAvailableError(ValueError):
-    """Raised when a required service is not available."""
-    pass
-
-
 class TranslationError(Exception):
-    """Raised when translation fails."""
+    """Base exception for all translation-related errors."""
     pass
+
+
+class ServiceNotAvailableError(TranslationError):
+    """Raised when a required translation service is not available."""
+    pass
+
+
+class TranslationFailedError(TranslationError):
+    """Raised when translation fails for any reason other than service availability."""
+    pass
+
+
+
 
 
 class ValidationError(ValueError):
@@ -28,17 +36,10 @@ logger = logging.getLogger(__name__)
 
 async def validation_error_handler(request: Request, exc: ValueError) -> JSONResponse:
     """Handle validation errors (ValueError from our business logic)."""
-    if isinstance(exc, ServiceNotAvailableError):
-        status_code = status.HTTP_503_SERVICE_UNAVAILABLE
-        error_type = "Service Unavailable"
-    else:
-        status_code = status.HTTP_400_BAD_REQUEST
-        error_type = "Validation Error"
-    
-    logger.warning(f"{error_type}: {str(exc)}")
+    logger.warning(f"Validation error: {str(exc)}")
     return JSONResponse(
-        status_code=status_code,
-        content={"error": error_type, "detail": str(exc)}
+        status_code=status.HTTP_400_BAD_REQUEST,
+        content={"error": "Validation Error", "detail": str(exc)}
     )
 
 
@@ -53,10 +54,17 @@ async def general_exception_handler(request: Request, exc: Exception) -> JSONRes
 
 async def translation_error_handler(request: Request, exc: TranslationError) -> JSONResponse:
     """Handle translation-specific errors."""
-    logger.error(f"Translation error: {str(exc)}")
+    if isinstance(exc, ServiceNotAvailableError):
+        status_code = status.HTTP_503_SERVICE_UNAVAILABLE
+        error_type = "Service Unavailable"
+    else:
+        status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
+        error_type = "Translation Error"
+    
+    logger.error(f"{error_type}: {str(exc)}")
     return JSONResponse(
-        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-        content={"error": "Translation Error", "detail": str(exc)}
+        status_code=status_code,
+        content={"error": error_type, "detail": str(exc)}
     )
 
 
