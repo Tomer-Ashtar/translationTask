@@ -8,8 +8,6 @@ from typing import Dict, Optional
 from transformers import MarianMTModel, MarianTokenizer
 import torch
 
-from app.core.exceptions import ValidationException, ServiceUnavailableException
-
 logger = logging.getLogger(__name__)
 
 
@@ -48,7 +46,7 @@ class TranslationService:
             return
             
         if language_pair not in self.MODEL_MAPPING:
-            raise ValidationException(f"Unsupported language pair: {language_pair}")
+            raise ValueError(f"Unsupported language pair: {language_pair}")
         
         model_name = self.MODEL_MAPPING[language_pair]
         
@@ -71,7 +69,7 @@ class TranslationService:
             
         except Exception as e:
             logger.error(f"Failed to load model for {language_pair}: {str(e)}")
-            raise ServiceUnavailableException(f"Model loading failed: {str(e)}")
+            raise Exception(f"Model loading failed: {str(e)}")
     
     def translate(self, text: str, source_lang: str, target_lang: str) -> str:
         """
@@ -90,12 +88,12 @@ class TranslationService:
             Exception: If translation fails
         """
         if not text or not text.strip():
-            raise ValidationException("Text cannot be empty")
+            raise ValueError("Text cannot be empty")
         
         # Check word count limit (maximum 10 words)
         word_count = len(text.strip().split())
         if word_count > 10:
-            raise ValidationException(f"Text exceeds maximum length of 10 words. Current text has {word_count} words.")
+            raise ValueError(f"Text exceeds maximum length of 10 words. Current text has {word_count} words.")
         
         # Normalize language codes and create language pair
         source_lang = source_lang.lower().strip()
@@ -104,8 +102,8 @@ class TranslationService:
         
         # Validate language pair
         if language_pair not in self.MODEL_MAPPING:
-            raise ValidationException(
-                f"Unsupported language pair: {source_lang} -> {target_lang}",
+            raise ValueError(
+                f"Unsupported language pair: {source_lang} -> {target_lang}. "
                 f"Supported pairs: {list(self.MODEL_MAPPING.keys())}"
             )
         
@@ -133,7 +131,7 @@ class TranslationService:
             
         except Exception as e:
             logger.error(f"Translation failed for {language_pair}: {str(e)}")
-            raise ServiceUnavailableException(f"Translation failed: {str(e)}")
+            raise Exception(f"Translation failed: {str(e)}")
     
     def get_supported_language_pairs(self) -> Dict[str, str]:
         """
