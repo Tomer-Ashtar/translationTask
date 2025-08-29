@@ -9,7 +9,11 @@ from fastapi import FastAPI, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.services.translation_service import TranslationService
-from app.core.exceptions import register_exception_handlers, ServiceNotAvailableError
+from app.core.exceptions import (
+    register_exception_handlers,
+    ServiceNotAvailableError,
+    TranslationError
+)
 from app.models.schemas import (
     TranslationRequest,
     TranslationResponse,
@@ -117,16 +121,10 @@ async def translate_text(request: TranslationRequest):
         )
         
     except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e)
-        )
+        raise  # Re-raise ValueError to be handled by our validation_error_handler
     except Exception as e:
         logger.error(f"Translation error: {str(e)}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Translation failed"
-        )
+        raise TranslationError("Translation failed")
 
 
 @app.post("/translate/batch", response_model=BatchTranslationResponse)
@@ -169,16 +167,10 @@ async def translate_batch(request: BatchTranslationRequest):
         )
         
     except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e)
-        )
+        raise  # Re-raise ValueError to be handled by our validation_error_handler
     except Exception as e:
         logger.error(f"Batch translation error: {str(e)}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Batch translation failed"
-        )
+        raise TranslationError("Batch translation failed")
 
 
 @app.get("/supported-languages", response_model=dict)
