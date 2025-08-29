@@ -5,6 +5,7 @@ Unit tests for the translation service.
 import pytest
 from unittest.mock import Mock, patch
 from app.services.translation_service import TranslationService
+from app.core.translation_config import get_supported_language_pairs
 
 
 class TestTranslationService:
@@ -22,11 +23,13 @@ class TestTranslationService:
         assert len(self.service._tokenizers) == 0
     
     def test_supported_language_pairs(self):
-        """Test getting supported language pairs."""
-        pairs = self.service.get_supported_language_pairs()
-        expected_pairs = ["he-ru", "en-he"]
-        assert all(pair in pairs for pair in expected_pairs)
-        assert len(pairs) == 2
+        """Test getting supported language pairs from config."""
+        pairs = get_supported_language_pairs()
+        expected_pairs = {
+            "he-ru": "Helsinki-NLP/opus-mt-he-ru",
+            "en-he": "Helsinki-NLP/opus-mt-en-he"
+        }
+        assert pairs == expected_pairs
     
     @patch('app.services.translation_service.MarianTokenizer')
     @patch('app.services.translation_service.MarianMTModel')
@@ -43,9 +46,14 @@ class TestTranslationService:
         mock_tokenizer.return_value = {"input_ids": Mock(), "attention_mask": Mock()}
         mock_tokenizer.decode.return_value = expected_translation
         mock_model.generate.return_value = [Mock()]
+        mock_model.to.return_value = mock_model
         
         # Test translation
-        result = self.service.translate("Hello", "en", "he")
+        with patch.object(mock_tokenizer, '__call__', return_value={"input_ids": Mock(), "attention_mask": Mock()}):
+            result = self.service.translate("Hello", "en", "he")
+            
+        # Verify result
+        assert result == expected_translation
         
         # Verify successful translation
         assert result == expected_translation
