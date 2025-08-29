@@ -12,16 +12,6 @@ logger = logging.getLogger(__name__)
 
 
 class TranslationService:
-    """
-    Service for handling text translation using pre-trained MarianMT models.
-    """
-
-    MODEL_MAPPING = {
-        "he-ru": "Helsinki-NLP/opus-mt-he-ru",
-        "ru-he": "Helsinki-NLP/opus-mt-ru-he", 
-        "en-he": "Helsinki-NLP/opus-mt-en-he",
-        "he-en": "Helsinki-NLP/opus-mt-he-en"
-    }
     
     def __init__(self):
         """Initialize the translation service with empty model cache."""
@@ -133,7 +123,6 @@ class TranslationService:
             logger.error(f"Translation failed for {language_pair}: {str(e)}")
             raise Exception(f"Translation failed: {str(e)}")
     
-    def get_supported_language_pairs(self) -> Dict[str, str]:
         """
         Get all supported language pairs with their model names.
         

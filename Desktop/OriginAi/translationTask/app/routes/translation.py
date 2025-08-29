@@ -8,6 +8,7 @@ from fastapi import APIRouter, Depends
 from app.core.exceptions import ServiceNotAvailableError, TranslationError
 from app.models.schemas import TranslationRequest, TranslationResponse
 from app.services.translation_service import TranslationService
+from app.core.translation_config import LANGUAGE_CODES, get_supported_language_pairs
 
 logger = logging.getLogger(__name__)
 
@@ -55,14 +56,8 @@ async def translate_text(
 
 
 @router.get("/supported_languages", response_model=dict)
-async def get_supported_languages(
-    translation_service: TranslationService = translation_service_dependency
-):
+async def get_supported_languages():
     return {
-        "supported_language_pairs": translation_service.get_supported_language_pairs(),
-        "language_codes": {
-            "he": "Hebrew",
-            "ru": "Russian", 
-            "en": "English"
-        }
+        "supported_language_pairs": get_supported_language_pairs(),
+        "language_codes": LANGUAGE_CODES
     }
