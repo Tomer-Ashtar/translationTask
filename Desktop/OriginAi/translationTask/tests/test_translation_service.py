@@ -42,8 +42,17 @@ class TestTranslationService:
         source_lang, target_lang = language_pair.split('-')
         
         expected_translation = "מתורגם" if target_lang == "he" else "переведенный" if target_lang == "ru" else "translated"
-        mock_tokenizer.return_value = {"input_ids": Mock(), "attention_mask": Mock()}
-        mock_model.generate.return_value = [Mock()]
+        
+        # Mock the tokenizer to return a proper dictionary with tensor-like objects
+        mock_input_ids = Mock()
+        mock_attention_mask = Mock()
+        mock_input_ids.to = Mock(return_value=mock_input_ids)
+        mock_attention_mask.to = Mock(return_value=mock_attention_mask)
+        mock_tokenizer.side_effect = lambda *args, **kwargs: {"input_ids": mock_input_ids, "attention_mask": mock_attention_mask}
+        
+        # Mock model generation and tokenizer decode
+        mock_output = Mock()
+        mock_model.generate.return_value = [mock_output]
         mock_tokenizer.decode.return_value = expected_translation
         
         service = TranslationService(lazy_loading=random_lazy_loading())
@@ -65,6 +74,18 @@ class TestTranslationService:
         
         language_pair = random.choice(list(SUPPORTED_MODELS.keys()))
         source_lang, target_lang = language_pair.split('-')
+        
+        # Mock the tokenizer to return a proper dictionary with tensor-like objects
+        mock_input_ids = Mock()
+        mock_attention_mask = Mock()
+        mock_input_ids.to = Mock(return_value=mock_input_ids)
+        mock_attention_mask.to = Mock(return_value=mock_attention_mask)
+        mock_tokenizer.side_effect = lambda *args, **kwargs: {"input_ids": mock_input_ids, "attention_mask": mock_attention_mask}
+        
+        # Mock model generation
+        mock_output = Mock()
+        mock_model.generate.return_value = [mock_output]
+        mock_tokenizer.decode.return_value = "Test translation"
         
         service = TranslationService(lazy_loading=random_lazy_loading())
         
@@ -91,6 +112,14 @@ class TestTranslationService:
         language_pair = random.choice(list(SUPPORTED_MODELS.keys()))
         source_lang, target_lang = language_pair.split('-')
         
+        # Mock the tokenizer to return a proper dictionary with tensor-like objects
+        mock_input_ids = Mock()
+        mock_attention_mask = Mock()
+        mock_input_ids.to = Mock(return_value=mock_input_ids)
+        mock_attention_mask.to = Mock(return_value=mock_attention_mask)
+        mock_tokenizer.side_effect = lambda *args, **kwargs: {"input_ids": mock_input_ids, "attention_mask": mock_attention_mask}
+        
+        # Setup mock to raise exception during translation
         mock_model.generate.side_effect = Exception("Model generation failed")
         
         service = TranslationService(lazy_loading=random_lazy_loading())

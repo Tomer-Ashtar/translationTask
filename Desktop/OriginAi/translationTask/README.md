@@ -104,17 +104,24 @@ Returns information about supported language pairs and codes.
 }
 ### Running Tests
 
+Before running the tests, make sure you have activated the virtual environment:
+
 ```bash
-# Install test dependencies (included in requirements.txt) and activate env
-python -m venv venv && source venv/bin/activate && pip install -r requirements.txt
-
-# Run all tests
-pytest
-
-# Run with coverage
-pytest --cov=app
-
-# Run specific test file
-pytest tests/test_translation_service.py -v
+# Activate the virtual environment (IMPORTANT!)
+source venv/bin/activate  # On Unix/macOS
+# OR
+venv\Scripts\activate     # On Windows
 ```
 
+Run the tests using any of these commands:
+
+```bash
+# Run all tests with verbose output
+python -m pytest -v
+
+# Run specific test file with verbose output
+python -m pytest tests/test_translation_service.py -v
+
+# Run with coverage report
+python -m pytest --cov=app
+```
