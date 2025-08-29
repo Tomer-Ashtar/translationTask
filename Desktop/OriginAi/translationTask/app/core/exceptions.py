@@ -13,20 +13,39 @@ class ServiceNotAvailableError(ValueError):
     pass
 
 
+class TranslationError(Exception):
+    """Raised when translation fails."""
+    pass
+
+
 logger = logging.getLogger(__name__)
 
 
 async def validation_error_handler(request: Request, exc: ValueError) -> JSONResponse:
     """Handle validation errors (ValueError from our business logic)."""
-    logger.warning(f"Validation error: {str(exc)}")
+    if isinstance(exc, ServiceNotAvailableError):
+        status_code = status.HTTP_503_SERVICE_UNAVAILABLE
+        error_type = "Service Unavailable"
+    else:
+        status_code = status.HTTP_400_BAD_REQUEST
+        error_type = "Validation Error"
+    
+    logger.warning(f"{error_type}: {str(exc)}")
     return JSONResponse(
-        status_code=status.HTTP_400_BAD_REQUEST,
-        content={"error": "Validation Error", "detail": str(exc)}
+        status_code=status_code,
+        content={"error": error_type, "detail": str(exc)}
     )
 
 
 async def general_exception_handler(request: Request, exc: Exception) -> JSONResponse:
     """Handle all other unexpected exceptions."""
+    if isinstance(exc, TranslationError):
+        logger.error(f"Translation error: {str(exc)}")
+        return JSONResponse(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content={"error": "Translation Error", "detail": str(exc)}
+        )
+    
     logger.error(f"Unexpected error: {type(exc).__name__}: {str(exc)}")
     return JSONResponse(
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,

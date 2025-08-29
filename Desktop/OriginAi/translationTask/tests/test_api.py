@@ -6,9 +6,8 @@ import pytest
 from fastapi.testclient import TestClient
 from unittest.mock import Mock, patch
 
-from app.main import app
-from app.services.translation_service import TranslationService
-from app.routes.translation import get_translation_service
+from app.main import app, translation_service
+from app.core.exceptions import TranslationError
 
 
 class TestTranslationAPI:
@@ -18,13 +17,32 @@ class TestTranslationAPI:
         """Set up test fixtures."""
         self.client = TestClient(app)
     
-    @patch('app.routes.translation.get_translation_service')
-    def test_translate_success(self, mock_get_service):
+    @patch('app.main.translation_service')
+    def test_health_check_healthy(self, mock_service):
+        """Test health check when service is healthy."""
+        mock_service.get_supported_language_pairs.return_value = {
+            "he-ru": "model1", "ru-he": "model2"
+        }
+        mock_service.is_model_loaded.return_value = True
+        
+        response = self.client.get("/health")
+        assert response.status_code == 200
+        data = response.json()
+        assert data["status"] == "healthy"
+        assert "supported_language_pairs" in data
+        assert "loaded_models" in data
+    
+    def test_health_check_service_unavailable(self):
+        """Test health check when service is not initialized."""
+        # This test runs before lifespan events, so service should be None
+        with patch('app.main.translation_service', None):
+            response = self.client.get("/health")
+            assert response.status_code == 503
+    
+    @patch('app.main.translation_service')
+    def test_translate_success(self, mock_service):
         """Test successful translation."""
-        # Create a mock service
-        mock_service = TranslationService()
-        mock_service.translate = lambda text, source_lang, target_lang: "Translated text"
-        mock_get_service.return_value = mock_service
+        mock_service.translate.return_value = "Translated text"
         
         request_data = {
             "text": "Hello world",
@@ -74,15 +92,11 @@ class TestTranslationAPI:
         response = self.client.post("/translate", json=request_data)
         assert response.status_code == 422  # Validation error
     
-    @patch('app.routes.translation.get_translation_service')
-    def test_translate_word_limit_exceeded(self, mock_get_service):
+    @patch('app.main.translation_service')
+    def test_translate_word_limit_exceeded(self, mock_service):
         """Test translation with text exceeding 10 word limit."""
-        # Create a mock service that raises ValueError
-        mock_service = TranslationService()
-        def raise_error(*args, **kwargs):
-            raise ValueError("Text exceeds maximum length of 10 words. Current text has 15 words.")
-        mock_service.translate = raise_error
-        mock_get_service.return_value = mock_service
+        # Configure mock to raise ValueError for word limit
+        mock_service.translate.side_effect = ValueError("Text exceeds maximum length of 10 words. Current text has 15 words.")
         
         request_data = {
             "text": "This is a very long text that definitely exceeds the maximum limit of ten words allowed",
@@ -94,15 +108,10 @@ class TestTranslationAPI:
         assert response.status_code == 400  # Business validation error
         assert "exceeds maximum length" in response.json()["detail"]
     
-    @patch('app.routes.translation.get_translation_service')
-    def test_translate_service_error(self, mock_get_service):
+    @patch('app.main.translation_service')
+    def test_translate_service_error(self, mock_service):
         """Test translation when service raises an error."""
-        # Create a mock service that raises TranslationError
-        mock_service = TranslationService()
-        def raise_error(*args, **kwargs):
-            raise Exception("Translation failed")
-        mock_service.translate = raise_error
-        mock_get_service.return_value = mock_service
+        mock_service.translate.side_effect = TranslationError("Translation failed")
         
         request_data = {
             "text": "Hello",
@@ -116,17 +125,56 @@ class TestTranslationAPI:
         assert data["error"] == "Translation Error"
         assert data["detail"] == "Translation failed"
     
-    @patch('app.routes.translation.get_translation_service')
-    def test_supported_languages_endpoint(self, mock_get_service):
+    @patch('app.main.translation_service')
+    def test_batch_translate_success(self, mock_service):
+        """Test successful batch translation."""
+        mock_service.translate.side_effect = ["Text 1 translated", "Text 2 translated"]
+        
+        request_data = {
+            "texts": ["Text 1", "Text 2"],
+            "source_lang": "en",
+            "target_lang": "he"
+        }
+        
+        response = self.client.post("/translate/batch", json=request_data)
+        assert response.status_code == 200
+        
+        data = response.json()
+        assert data["total_count"] == 2
+        assert len(data["translations"]) == 2
+        assert data["translations"][0]["translated_text"] == "Text 1 translated"
+        assert data["translations"][1]["translated_text"] == "Text 2 translated"
+    
+    def test_batch_translate_empty_list(self):
+        """Test batch translation with empty text list."""
+        request_data = {
+            "texts": [],
+            "source_lang": "en",
+            "target_lang": "he"
+        }
+        
+        response = self.client.post("/translate/batch", json=request_data)
+        assert response.status_code == 422  # Validation error
+    
+    def test_batch_translate_too_many_texts(self):
+        """Test batch translation with too many texts."""
+        request_data = {
+            "texts": ["text"] * 101,  # Exceeds max limit of 100
+            "source_lang": "en",
+            "target_lang": "he"
+        }
+        
+        response = self.client.post("/translate/batch", json=request_data)
+        assert response.status_code == 422  # Validation error
+    
+    @patch('app.main.translation_service')
+    def test_supported_languages_endpoint(self, mock_service):
         """Test supported languages endpoint."""
-        # Create a mock service that returns language pairs
-        mock_service = TranslationService()
-        mock_service.get_supported_language_pairs = lambda: {
+        mock_service.get_supported_language_pairs.return_value = {
             "he-ru": "model1", "ru-he": "model2"
         }
-        mock_get_service.return_value = mock_service
         
-        response = self.client.get("/languages/supported")
+        response = self.client.get("/supported-languages")
         assert response.status_code == 200
         
         data = response.json()

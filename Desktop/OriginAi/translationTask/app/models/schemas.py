@@ -21,9 +21,17 @@ class TranslationRequest(BaseModel):
     @field_validator('text')
     @classmethod
     def validate_text(cls, v):
-        """Basic text validation."""
+        """Validate that text is not just whitespace and doesn't exceed word limit."""
+        if not v.strip():
+            raise ValueError("Text cannot be empty or just whitespace")
+
+        # Check word count limit (maximum 10 words)
+        word_count = len(v.strip().split())
+        if word_count > 10:
+            raise ValueError(f"Text exceeds maximum length of 10 words. Current text has {word_count} words.")
+        
         return v.strip()
-    
+
     @field_validator('source_lang', 'target_lang')
     @classmethod
     def validate_language_codes(cls, v):
