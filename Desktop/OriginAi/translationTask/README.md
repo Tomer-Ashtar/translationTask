@@ -76,7 +76,7 @@ POST translations/translate
 
 ### 2. Supported_Languages
 ```http
-GET translations/supported-languages
+GET translations/supported_languages
 ```
 Returns information about supported language pairs and codes.
 **Response example**:

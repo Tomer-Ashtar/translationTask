@@ -136,7 +136,7 @@ class TestTranslationAPI:
         random_pairs = dict(random.sample(SUPPORTED_MODELS.items(), k=len(SUPPORTED_MODELS)))
         mock_service.get_supported_language_pairs.return_value = random_pairs
         
-        response = self.client.get("/translations/supported-languages")
+        response = self.client.get("/translations/supported_languages")
         assert response.status_code == 200
         data = response.json()
         assert "supported_language_pairs" in data

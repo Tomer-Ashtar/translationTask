@@ -43,8 +43,6 @@ async def translate_text(
         )
     
     except TranslationError:
-        # Just re-raise any TranslationError (including ServiceNotAvailableError) as is
-        # This preserves the original error message and type
         raise
     except Exception as e:
         # Wrap any other unexpected error in TranslationFailedError
@@ -52,7 +50,7 @@ async def translate_text(
         raise TranslationFailedError("Translation failed due to an unexpected error")
 
 
-@router.get("/supported-languages", response_model = dict)
+@router.get("/supported_languages", response_model = dict)
 def get_supported_languages():
     return {
         "supported_language_pairs": get_supported_language_pairs(),
