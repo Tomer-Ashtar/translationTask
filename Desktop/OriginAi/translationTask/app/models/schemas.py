@@ -4,19 +4,13 @@ Pydantic models for request and response validation.
 
 from pydantic import BaseModel, Field, field_validator
 from typing import List, Optional
+from app.core.translation_config import LANGUAGE_CODES, SUPPORTED_MODELS
 
 
-class TranslationRequest(BaseModel):
-    """Request model for translation endpoint."""
-    
-    text: str = Field(
-        ..., 
-        min_length=1,  # Basic structural validation
-        max_length=500,  # Technical limit
-        description="Text to translate"
-    )
-    source_lang: str = Field(..., description="Source language code (he, ru, en)")
-    target_lang: str = Field(..., description="Target language code (he, ru, en)")
+class TranslationRequest(BaseModel):    
+    text: str = Field( ..., min_length = 1, max_length = 500, description="Text to translate")
+    source_lang: str = Field(..., description=f"Source language code {list(LANGUAGE_CODES.keys())}")
+    target_lang: str = Field(..., description=f"Target language code {list(LANGUAGE_CODES.keys())}")
     
     @field_validator('text')
     @classmethod
@@ -36,22 +30,33 @@ class TranslationRequest(BaseModel):
     @classmethod
     def validate_language_codes(cls, v):
         """Validate language codes."""
-        allowed_langs = {'he', 'ru', 'en'}
         v = v.lower().strip()
-        if v not in allowed_langs:
-            raise ValueError(f"Language code must be one of: {allowed_langs}")
+        if v not in LANGUAGE_CODES:
+            raise ValueError(f"Language code must be one of: {list(LANGUAGE_CODES.keys())}")
         return v
     
     @field_validator('target_lang')
     @classmethod
-    def validate_different_languages(cls, v, info):
-        """Ensure source and target languages are different."""
-        if info.data.get('source_lang') and v == info.data['source_lang']:
+    def validate_language_pair(cls, target_lang, info):
+        """Validate that the language pair is supported and languages are different."""
+        source_lang = info.data.get('source_lang')
+        if not source_lang:
+            return target_lang
+            
+        # Check if languages are different
+        if target_lang == source_lang:
             raise ValueError("Source and target languages must be different")
-        return v
-
-
-
+            
+        # Check if language pair is supported
+        lang_pair = f"{source_lang}-{target_lang}"
+        if lang_pair not in SUPPORTED_MODELS:
+            supported_pairs = list(SUPPORTED_MODELS.keys())
+            raise ValueError(
+                f"Unsupported language pair: {source_lang} -> {target_lang}. "
+                f"Supported pairs: {supported_pairs}"
+            )
+            
+        return target_lang
 
 
 class TranslationResponse(BaseModel):
@@ -61,11 +66,6 @@ class TranslationResponse(BaseModel):
     source_lang: str = Field(..., description="Source language code")
     target_lang: str = Field(..., description="Target language code")
     original_text: str = Field(..., description="Original input text")
-
-
-
-
-
 
 
 class ErrorResponse(BaseModel):

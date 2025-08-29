@@ -30,7 +30,7 @@ def get_translation_service() -> TranslationService:
     return service
 
 
-@router.post("translate", response_model = TranslationResponse)
+@router.post("/translate", response_model = TranslationResponse)
 async def translate_text(
     request: TranslationRequest,
     translation_service: TranslationService = translation_service_dependency

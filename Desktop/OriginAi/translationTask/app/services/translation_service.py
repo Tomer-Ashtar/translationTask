@@ -7,6 +7,7 @@ import logging
 from typing import Dict, Optional
 from transformers import MarianMTModel, MarianTokenizer
 import torch
+from app.core.translation_config import SUPPORTED_MODELS
 
 logger = logging.getLogger(__name__)
 
@@ -28,16 +29,12 @@ class TranslationService:
             language_pair: Language pair in format 'source-target' (e.g., 'he-ru')
         
         Raises:
-            ValueError: If language pair is not supported
             Exception: If model loading fails
         """
         if language_pair in self._models:
             return
             
-        if language_pair not in self.MODEL_MAPPING:
-            raise ValueError(f"Unsupported language pair: {language_pair}")
-        
-        model_name = self.MODEL_MAPPING[language_pair]
+        model_name = SUPPORTED_MODELS[language_pair]  # KeyError will be caught by caller
         
         try:
             logger.info(f"Loading model for {language_pair}: {model_name}")
@@ -63,39 +60,9 @@ class TranslationService:
     def translate(self, text: str, source_lang: str, target_lang: str) -> str:
         """
         Translate text from source language to target language.
-        
-        Args:
-            text: Text to translate
-            source_lang: Source language code (he, ru, en)
-            target_lang: Target language code (he, ru, en)
-        
-        Returns:
-            Translated text
-        
-        Raises:
-            ValueError: If language pair is not supported or text is empty
-            Exception: If translation fails
+        All input validation is handled by the TranslationRequest schema.
         """
-        # Business validation
-        text = text.strip()
-        if not text:
-            raise ValueError("Text cannot be empty")
-
-        word_count = len(text.split())
-        if word_count > 10:
-            raise ValueError(f"Text exceeds maximum length of 10 words. Current text has {word_count} words.")
-        
-        # Normalize language codes and create language pair
-        source_lang = source_lang.lower().strip()
-        target_lang = target_lang.lower().strip()
         language_pair = f"{source_lang}-{target_lang}"
-        
-        # Validate language pair
-        if language_pair not in self.MODEL_MAPPING:
-            raise ValueError(
-                f"Unsupported language pair: {source_lang} -> {target_lang}. "
-                f"Supported pairs: {list(self.MODEL_MAPPING.keys())}"
-            )
         
         try:
             # Load model if not already cached
@@ -122,14 +89,6 @@ class TranslationService:
         except Exception as e:
             logger.error(f"Translation failed for {language_pair}: {str(e)}")
             raise Exception(f"Translation failed: {str(e)}")
-    
-        """
-        Get all supported language pairs with their model names.
-        
-        Returns:
-            Dictionary mapping language pairs to model names
-        """
-        return self.MODEL_MAPPING.copy()
     
     def is_model_loaded(self, language_pair: str) -> bool:
         """
