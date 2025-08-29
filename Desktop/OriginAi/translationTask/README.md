@@ -45,16 +45,6 @@ service for text translation using HelsinkiNLP MarianMT models from HuggingFace.
      TRANSLATION_LAZY_LOADING=true uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
      ```
 
-   Choose eager loading (default) for:
-   - Consistent response times
-   - Early detection of model loading issues
-   - Production environments
-
-   Choose lazy loading for:
-   - Faster startup time
-   - Development environments
-   - Memory optimization when not all models are needed
-
 ## API Endpoints
 
 ### 1. Translation
@@ -62,7 +52,7 @@ service for text translation using HelsinkiNLP MarianMT models from HuggingFace.
 POST translations/translate
 ```
 
-**Request Body**:
+**Request Body example**:
 ```json
 {
     "text": "Hello world",
@@ -71,7 +61,7 @@ POST translations/translate
 }
 ```
 
-**Note**: Text is limited to a maximum of 500 characters and up to 10 words. Longer texts will be rejected with a validation error.
+**Note**: Text is limited to a 1 - 500 characters and up to 10 words. Longer texts will be rejected with a validation error.
 
 
 **Response example**:
@@ -116,12 +106,15 @@ venv\Scripts\activate     # On Windows
 Run the tests using any of these commands:
 
 ```bash
-# Run all tests with verbose output
+# Run all tests (simple output)
+python -m pytest
+
+# Run all tests with verbose output (-v flag shows each test case)
 python -m pytest -v
+
+# Run specific test file (simple output)
+python -m pytest tests/test_translation_service.py
 
 # Run specific test file with verbose output
 python -m pytest tests/test_translation_service.py -v
 
-# Run with coverage report
-python -m pytest --cov=app
-```
