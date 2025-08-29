@@ -35,14 +35,11 @@ class TranslationRequest(BaseModel):
             raise ValueError(f"Language code must be one of: {list(LANGUAGE_CODES.keys())}")
         return v
     
-    @field_validator('target_lang')
+    @field_validator('source_lang', 'target_lang')
     @classmethod
-    def validate_language_pair(cls, target_lang, info):
+    def validate_language_pair(cls, target_lang, source_lang):
         """Validate that the language pair is supported and languages are different."""
-        source_lang = info.data.get('source_lang')
-        if not source_lang:
-            return target_lang
-            
+
         # Check if languages are different
         if target_lang == source_lang:
             raise ValueError("Source and target languages must be different")
