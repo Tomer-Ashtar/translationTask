@@ -32,9 +32,18 @@ service for text translation using HelsinkiNLP MarianMT models from HuggingFace.
    ```
 
 4. **Run the application**:
-   ```bash
-   uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
-   ```
+
+   The application supports two model loading strategies:
+   
+   - **Default (Eager Loading)**: All translation models are loaded at startup
+     ```bash
+     uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+     ```
+
+   - **Lazy Loading**: Models are loaded on first use
+     ```bash
+     TRANSLATION_LAZY_LOADING=true uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+     ```
 
 ## API Endpoints
 
@@ -43,7 +52,7 @@ service for text translation using HelsinkiNLP MarianMT models from HuggingFace.
 POST translations/translate
 ```
 
-**Request Body**:
+**Request Body example**:
 ```json
 {
     "text": "Hello world",
@@ -52,7 +61,7 @@ POST translations/translate
 }
 ```
 
-**Note**: Text is limited to a maximum of 500 characters and up to 10 words. Longer texts will be rejected with a validation error.
+**Note**: Text is limited to a 1 - 500 characters and up to 10 words. Longer texts will be rejected with a validation error.
 
 
 **Response example**:
@@ -67,7 +76,7 @@ POST translations/translate
 
 ### 2. Supported_Languages
 ```http
-GET translations/supported-languages
+GET translations/supported_languages
 ```
 Returns information about supported language pairs and codes.
 **Response example**:
@@ -85,17 +94,27 @@ Returns information about supported language pairs and codes.
 }
 ### Running Tests
 
+Before running the tests, make sure you have activated the virtual environment:
+
 ```bash
-# Install test dependencies (included in requirements.txt) and activate env
-python -m venv venv && source venv/bin/activate && pip install -r requirements.txt
-
-# Run all tests
-pytest
-
-# Run with coverage
-pytest --cov=app
-
-# Run specific test file
-pytest tests/test_translation_service.py -v
+# Activate the virtual environment (IMPORTANT!)
+source venv/bin/activate  # On Unix/macOS
+# OR
+venv\Scripts\activate     # On Windows
 ```
+
+Run the tests using any of these commands:
+
+```bash
+# Run all tests (simple output)
+python -m pytest
+
+# Run all tests with verbose output (-v flag shows each test case)
+python -m pytest -v
+
+# Run specific test file (simple output)
+python -m pytest tests/test_translation_service.py
+
+# Run specific test file with verbose output
+python -m pytest tests/test_translation_service.py -v
 
