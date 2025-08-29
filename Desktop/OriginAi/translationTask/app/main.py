@@ -7,22 +7,25 @@ from contextlib import asynccontextmanager
 from typing import Optional
 from fastapi import FastAPI, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
 
 from app.services.translation_service import TranslationService
+from app.core.exceptions import (
+    register_exception_handlers,
+    ServiceNotAvailableError,
+    TranslationError
+)
 from app.models.schemas import (
     TranslationRequest,
     TranslationResponse,
     BatchTranslationRequest,
     BatchTranslationResponse,
-    ErrorResponse,
     HealthResponse
 )
 
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    format="%(asctime)s - %(name)s - %(levelname)s  %(message)s"
 )
 logger = logging.getLogger(__name__)
 
@@ -36,71 +39,42 @@ async def lifespan(app: FastAPI):
     global translation_service
     
     # Startup
-    logger.info("Starting translation service...")
+    logger.info("Starting Translation service...")
     translation_service = TranslationService()
     logger.info("Translation service started successfully")
     
     yield
     
     # Shutdown
-    logger.info("Shutting down translation service...")
+    logger.info("Shutting down Translation service...")
 
 
 # Create FastAPI app
 app = FastAPI(
-    title="OriginAI Translation Service",
+    title="Translation Service",
     description="REST API for text translation using HelsinkiNLP MarianMT models",
     version="1.0.0",
     lifespan=lifespan
 )
 
-# Add CORS middleware
+# Add CORS middleware for web browser compatibility
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # In production, specify actual origins
-    allow_credentials=True,
+    allow_origins=["*"],
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-
-@app.exception_handler(ValueError)
-async def value_error_handler(request, exc):
-    """Handle ValueError exceptions."""
-    return JSONResponse(
-        status_code=status.HTTP_400_BAD_REQUEST,
-        content={"error": "Validation Error", "detail": str(exc)}
-    )
-
-
-@app.exception_handler(Exception)
-async def general_exception_handler(request, exc):
-    """Handle general exceptions."""
-    logger.error(f"Unexpected error: {str(exc)}")
-    return JSONResponse(
-        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-        content={"error": "Internal Server Error", "detail": "An unexpected error occurred"}
-    )
-
-
-@app.get("/", response_model=dict)
-async def root():
-    """Root endpoint with basic API information."""
-    return {
-        "message": "OriginAI Translation Service",
-        "version": "1.0.0",
-        "documentation": "/docs"
-    }
+# Register all exception handlers
+register_exception_handlers(app)
 
 
 @app.get("/health", response_model=HealthResponse)
 async def health_check():
     """Health check endpoint."""
     if translation_service is None:
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Translation service not initialized"
-        )
+        raise ServiceNotAvailableError("Translation service not initialized")
     
     supported_pairs = list(translation_service.get_supported_language_pairs().keys())
     loaded_models = [
@@ -130,10 +104,7 @@ async def translate_text(request: TranslationRequest):
         HTTPException: If translation fails or service unavailable
     """
     if translation_service is None:
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Translation service not initialized"
-        )
+        raise ServiceNotAvailableError("Translation service not initialized")
     
     try:
         translated_text = translation_service.translate(
@@ -150,16 +121,12 @@ async def translate_text(request: TranslationRequest):
         )
         
     except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e)
-        )
+        raise  # Re-raise ValueError to be handled by our validation_error_handler
+    except TranslationError:
+        raise  # Re-raise TranslationError to be handled by our exception handler
     except Exception as e:
         logger.error(f"Translation error: {str(e)}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Translation failed"
-        )
+        raise TranslationError("Translation failed")
 
 
 @app.post("/translate/batch", response_model=BatchTranslationResponse)
@@ -177,10 +144,7 @@ async def translate_batch(request: BatchTranslationRequest):
         HTTPException: If translation fails or service unavailable
     """
     if translation_service is None:
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Translation service not initialized"
-        )
+        raise ServiceNotAvailableError("Translation service not initialized")
     
     try:
         translations = []
@@ -205,26 +169,17 @@ async def translate_batch(request: BatchTranslationRequest):
         )
         
     except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e)
-        )
+        raise  # Re-raise ValueError to be handled by our validation_error_handler
     except Exception as e:
         logger.error(f"Batch translation error: {str(e)}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Batch translation failed"
-        )
+        raise TranslationError("Batch translation failed")
 
 
 @app.get("/supported-languages", response_model=dict)
 async def get_supported_languages():
     """Get information about supported language pairs."""
     if translation_service is None:
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Translation service not initialized"
-        )
+        raise ServiceNotAvailableError("Translation service not initialized")
     
     return {
         "supported_language_pairs": translation_service.get_supported_language_pairs(),

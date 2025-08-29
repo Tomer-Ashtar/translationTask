@@ -87,11 +87,12 @@ class TranslationService:
             ValueError: If language pair is not supported or text is empty
             Exception: If translation fails
         """
-        if not text or not text.strip():
+        # Business validation
+        text = text.strip()
+        if not text:
             raise ValueError("Text cannot be empty")
-        
-        # Check word count limit (maximum 10 words)
-        word_count = len(text.strip().split())
+
+        word_count = len(text.split())
         if word_count > 10:
             raise ValueError(f"Text exceeds maximum length of 10 words. Current text has {word_count} words.")
         

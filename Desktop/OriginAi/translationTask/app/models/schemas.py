@@ -9,7 +9,12 @@ from typing import List, Optional
 class TranslationRequest(BaseModel):
     """Request model for translation endpoint."""
     
-    text: str = Field(..., min_length=1, max_length=500, description="Text to translate (maximum 10 words)")
+    text: str = Field(
+        ..., 
+        min_length=1,  # Basic structural validation
+        max_length=500,  # Technical limit
+        description="Text to translate"
+    )
     source_lang: str = Field(..., description="Source language code (he, ru, en)")
     target_lang: str = Field(..., description="Target language code (he, ru, en)")
     
@@ -19,12 +24,12 @@ class TranslationRequest(BaseModel):
         """Validate that text is not just whitespace and doesn't exceed word limit."""
         if not v.strip():
             raise ValueError("Text cannot be empty or just whitespace")
-        
+
         # Check word count limit (maximum 10 words)
         word_count = len(v.strip().split())
         if word_count > 10:
             raise ValueError(f"Text exceeds maximum length of 10 words. Current text has {word_count} words.")
-        
+
         return v.strip()
     
     @field_validator('source_lang', 'target_lang')
