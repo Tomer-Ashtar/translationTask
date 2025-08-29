@@ -42,10 +42,9 @@ async def translate_text(
             original_text = request.text
         )
     
-    except TranslationError:
-        raise
+    except TranslationError as e:
+        logger.error(f"Translation service error: {str(e)}")
     except Exception as e:
-        # Wrap any other unexpected error in TranslationFailedError
         logger.error(f"Unexpected translation error: {str(e)}")
         raise TranslationFailedError("Translation failed due to an unexpected error")
 
