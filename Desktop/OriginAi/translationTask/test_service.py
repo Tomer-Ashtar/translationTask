@@ -40,8 +40,7 @@ def main():
     print("🚀 Testing OriginAI Translation Service")
     print(f"Base URL: {base_url}")
     
-    # Test root endpoint
-    test_endpoint(f"{base_url}/")
+    # Skip root endpoint test since it was removed for leaner implementation
     
     # Test health check
     test_endpoint(f"{base_url}/health")

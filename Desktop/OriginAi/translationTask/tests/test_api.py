@@ -16,14 +16,10 @@ class TestTranslationAPI:
         """Set up test fixtures."""
         self.client = TestClient(app)
     
-    def test_root_endpoint(self):
-        """Test root endpoint."""
+    def test_root_endpoint_not_found(self):
+        """Test that root endpoint returns 404 since it was removed."""
         response = self.client.get("/")
-        assert response.status_code == 200
-        data = response.json()
-        assert "message" in data
-        assert "version" in data
-        assert data["version"] == "1.0.0"
+        assert response.status_code == 404
     
     @patch('app.main.translation_service')
     def test_health_check_healthy(self, mock_service):
