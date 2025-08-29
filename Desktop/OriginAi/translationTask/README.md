@@ -52,10 +52,10 @@ POST translations/translate
 }
 ```
 
-**Note**: Text is limited to a maximum of 500 characters build from max 10 words. Longer texts will be rejected with a validation error.
+**Note**: Text is limited to a maximum of 500 characters and up to 10 words. Longer texts will be rejected with a validation error.
 
 
-**Response**:
+**Response example**:
 ```json
 {
     "translated_text": "שלום עולם",
@@ -70,14 +70,12 @@ POST translations/translate
 GET translations/supported-languages
 ```
 Returns information about supported language pairs and codes.
-**Response**:
+**Response example**:
 ```json
 {
       "supported_language_pairs": {
         "he-ru": "Helsinki-NLP/opus-mt-he-ru",
-        "ru-he": "Helsinki-NLP/opus-mt-ru-he",
         "en-he": "Helsinki-NLP/opus-mt-en-he",
-        "he-en": "Helsinki-NLP/opus-mt-he-en"
     },
     "language_codes": {
         "he": "Hebrew",
