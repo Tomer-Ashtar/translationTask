@@ -7,7 +7,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.exceptions import register_exception_handlers
-from app.routes import translation, languages
+from app.routes import translation
 
 # Configure logging
 logging.basicConfig(
@@ -35,9 +35,8 @@ app.add_middleware(
 # Register all exception handlers
 register_exception_handlers(app)
 
-# Include routers
+# Include router
 app.include_router(translation.router)
-app.include_router(languages.router)
 
 
 if __name__ == "__main__":
