@@ -9,8 +9,8 @@ from app.core.translation_config import LANGUAGE_CODES, SUPPORTED_MODELS
 
 class TranslationRequest(BaseModel):    
     text: str = Field( ..., min_length = 1, max_length = 500, description="Text to translate")
-    source_lang: str = Field(..., description=f"Source language code {list(LANGUAGE_CODES.keys())}")
-    target_lang: str = Field(..., description=f"Target language code {list(LANGUAGE_CODES.keys())}")
+    source_lang: str = Field(..., description=f"Source language code")
+    target_lang: str = Field(..., description=f"Target language code")
     
     @field_validator('text')
     @classmethod

@@ -13,9 +13,7 @@ LANGUAGE_CODES = {
 # Mapping of supported language pairs to their respective models
 SUPPORTED_MODELS = {
     "he-ru": "Helsinki-NLP/opus-mt-he-ru",
-    "ru-he": "Helsinki-NLP/opus-mt-ru-he",
     "en-he": "Helsinki-NLP/opus-mt-en-he",
-    "he-en": "Helsinki-NLP/opus-mt-he-en"
 }
 
 def get_supported_language_pairs() -> Dict[str, str]:
