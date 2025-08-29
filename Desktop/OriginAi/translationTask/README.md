@@ -1,6 +1,6 @@
 # OriginAI Translation Service
 
-A production-ready REST API service for text translation using HelsinkiNLP MarianMT models from HuggingFace. This service provides translation capabilities for Hebrew-Russian and English-Hebrew language pairs.
+service for text translation using HelsinkiNLP MarianMT models from HuggingFace. This service provides translation capabilities for Hebrew-Russian and English-Hebrew language pairs.
 
 ## Quick Start
 
