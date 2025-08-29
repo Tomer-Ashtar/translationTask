@@ -15,6 +15,7 @@ class TranslationService:
     """
     Service for handling text translation using pre-trained MarianMT models.
     """
+
     
     # Model mappings for supported language pairs
     MODEL_MAPPING = {
