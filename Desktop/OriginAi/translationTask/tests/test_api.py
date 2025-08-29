@@ -6,7 +6,8 @@ import pytest
 from fastapi.testclient import TestClient
 from unittest.mock import Mock, patch
 
-from app.main import app
+from app.main import app, translation_service
+from app.core.exceptions import TranslationError
 
 
 class TestTranslationAPI:
@@ -91,8 +92,12 @@ class TestTranslationAPI:
         response = self.client.post("/translate", json=request_data)
         assert response.status_code == 422  # Validation error
     
-    def test_translate_word_limit_exceeded(self):
+    @patch('app.main.translation_service')
+    def test_translate_word_limit_exceeded(self, mock_service):
         """Test translation with text exceeding 10 word limit."""
+        # Configure mock to raise ValueError for word limit
+        mock_service.translate.side_effect = ValueError("Text exceeds maximum length of 10 words. Current text has 15 words.")
+        
         request_data = {
             "text": "This is a very long text that definitely exceeds the maximum limit of ten words allowed",
             "source_lang": "en",
@@ -100,12 +105,13 @@ class TestTranslationAPI:
         }
         
         response = self.client.post("/translate", json=request_data)
-        assert response.status_code == 422  # Validation error
+        assert response.status_code == 400  # Business validation error
+        assert "exceeds maximum length" in response.json()["detail"]
     
     @patch('app.main.translation_service')
     def test_translate_service_error(self, mock_service):
         """Test translation when service raises an error."""
-        mock_service.translate.side_effect = Exception("Translation failed")
+        mock_service.translate.side_effect = TranslationError("Translation failed")
         
         request_data = {
             "text": "Hello",
@@ -115,6 +121,9 @@ class TestTranslationAPI:
         
         response = self.client.post("/translate", json=request_data)
         assert response.status_code == 500
+        data = response.json()
+        assert data["error"] == "Translation Error"
+        assert data["detail"] == "Translation failed"
     
     @patch('app.main.translation_service')
     def test_batch_translate_success(self, mock_service):

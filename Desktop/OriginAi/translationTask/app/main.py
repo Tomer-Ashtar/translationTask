@@ -122,6 +122,8 @@ async def translate_text(request: TranslationRequest):
         
     except ValueError as e:
         raise  # Re-raise ValueError to be handled by our validation_error_handler
+    except TranslationError:
+        raise  # Re-raise TranslationError to be handled by our exception handler
     except Exception as e:
         logger.error(f"Translation error: {str(e)}")
         raise TranslationError("Translation failed")

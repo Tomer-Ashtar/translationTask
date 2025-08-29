@@ -53,8 +53,18 @@ async def general_exception_handler(request: Request, exc: Exception) -> JSONRes
     )
 
 
+async def translation_error_handler(request: Request, exc: TranslationError) -> JSONResponse:
+    """Handle translation-specific errors."""
+    logger.error(f"Translation error: {str(exc)}")
+    return JSONResponse(
+        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        content={"error": "Translation Error", "detail": str(exc)}
+    )
+
+
 def register_exception_handlers(app) -> None:
     """Register exception handlers with the FastAPI app."""
     app.add_exception_handler(ValueError, validation_error_handler)
+    app.add_exception_handler(TranslationError, translation_error_handler)
     app.add_exception_handler(Exception, general_exception_handler)
     logger.info("Exception handlers registered")
