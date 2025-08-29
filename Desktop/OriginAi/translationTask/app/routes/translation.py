@@ -38,16 +38,16 @@ async def translate_text(
     
     try:
         translated_text = translation_service.translate(
-            text=request.text,
-            source_lang=request.source_lang,
-            target_lang=request.target_lang
+            text = request.text,
+            source_lang = request.source_lang,
+            target_lang = request.target_lang
         )
         
         return TranslationResponse(
-            translated_text=translated_text,
-            source_lang=request.source_lang,
-            target_lang=request.target_lang,
-            original_text=request.text
+            translated_text = translated_text,
+            source_lang = request.source_lang,
+            target_lang = request.target_lang,
+            original_text = request.text
         )
     
     except Exception as e:
@@ -55,7 +55,7 @@ async def translate_text(
         raise TranslationError("Translation failed")
 
 
-@router.get("/supported_languages", response_model=dict)
+@router.get("/supported_languages", response_model = dict)
 def get_supported_languages():
     return {
         "supported_language_pairs": get_supported_language_pairs(),

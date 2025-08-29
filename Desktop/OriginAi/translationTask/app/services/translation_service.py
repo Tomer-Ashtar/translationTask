@@ -34,7 +34,7 @@ class TranslationService:
         if language_pair in self._models:
             return
             
-        model_name = SUPPORTED_MODELS[language_pair]  # KeyError will be caught by caller
+        model_name = SUPPORTED_MODELS[language_pair]
         
         try:
             logger.info(f"Loading model for {language_pair}: {model_name}")
@@ -73,15 +73,15 @@ class TranslationService:
             tokenizer = self._tokenizers[language_pair]
             
             # Tokenize input text
-            inputs = tokenizer(text, return_tensors="pt", padding=True, truncation=True, max_length=512)
+            inputs = tokenizer(text, return_tensors = "pt", padding = True, truncation = True, max_length = 512)
             inputs = {k: v.to(self._device) for k, v in inputs.items()}
             
             # Generate translation
             with torch.no_grad():
-                outputs = model.generate(**inputs, max_length=512, num_beams=4, early_stopping=True)
+                outputs = model.generate(**inputs, max_length = 512, num_beams = 4, early_stopping = True)
             
             # Decode the translation
-            translated_text = tokenizer.decode(outputs[0], skip_special_tokens=True)
+            translated_text = tokenizer.decode(outputs[0], skip_special_tokens = True)
             
             logger.info(f"Successfully translated text from {source_lang} to {target_lang}")
             return translated_text.strip()
@@ -90,14 +90,3 @@ class TranslationService:
             logger.error(f"Translation failed for {language_pair}: {str(e)}")
             raise Exception(f"Translation failed: {str(e)}")
     
-    def is_model_loaded(self, language_pair: str) -> bool:
-        """
-        Check if a model is already loaded for the given language pair.
-        
-        Args:
-            language_pair: Language pair in format 'source-target'
-        
-        Returns:
-            True if model is loaded, False otherwise
-        """
-        return language_pair in self._models

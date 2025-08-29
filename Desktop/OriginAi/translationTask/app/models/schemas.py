@@ -62,10 +62,10 @@ class TranslationRequest(BaseModel):
 class TranslationResponse(BaseModel):
     """Response model for translation endpoint."""
     
-    translated_text: str = Field(..., description="The translated text")
-    source_lang: str = Field(..., description="Source language code")
-    target_lang: str = Field(..., description="Target language code")
-    original_text: str = Field(..., description="Original input text")
+    translated_text: str = Field(..., description = "The translated text")
+    source_lang: str = Field(..., description = "Source language code")
+    target_lang: str = Field(..., description = "Target language code")
+    original_text: str = Field(..., description = "Original input text")
 
 
 class ErrorResponse(BaseModel):
