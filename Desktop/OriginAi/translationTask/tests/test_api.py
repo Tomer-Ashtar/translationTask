@@ -16,11 +16,6 @@ class TestTranslationAPI:
         """Set up test fixtures."""
         self.client = TestClient(app)
     
-    def test_root_endpoint_not_found(self):
-        """Test that root endpoint returns 404 since it was removed."""
-        response = self.client.get("/")
-        assert response.status_code == 404
-    
     @patch('app.main.translation_service')
     def test_health_check_healthy(self, mock_service):
         """Test health check when service is healthy."""

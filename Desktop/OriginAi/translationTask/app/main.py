@@ -15,7 +15,6 @@ from app.models.schemas import (
     TranslationResponse,
     BatchTranslationRequest,
     BatchTranslationResponse,
-    ErrorResponse,
     HealthResponse
 )
 
@@ -57,10 +56,10 @@ app = FastAPI(
 # Add CORS middleware for web browser compatibility
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # For development. In production: ["https://yourdomain.com"]
-    allow_credentials=False,  # Not needed for this API
-    allow_methods=["GET", "POST"],  # Only methods we actually use
-    allow_headers=["Content-Type", "Authorization"],  # Only headers we need
+    allow_origins=["*"],
+    allow_credentials=False,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 # Register all exception handlers
