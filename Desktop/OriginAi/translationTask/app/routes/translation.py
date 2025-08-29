@@ -17,17 +17,9 @@ router = APIRouter(
     tags=["translation"]
 )
 
-translation_service_dependency = Depends(lambda: get_translation_service())
+from app.core.service_init import get_translation_service
 
-def get_translation_service() -> TranslationService:
-    if not hasattr(get_translation_service, 'service'):
-        get_translation_service.service = TranslationService()
-    
-    service = get_translation_service.service
-    if not service:
-        raise ServiceNotAvailableError("Translation service not initialized")
-    
-    return service
+translation_service_dependency = Depends(get_translation_service)
 
 
 @router.post("/translate", response_model = TranslationResponse)

@@ -14,12 +14,31 @@ logger = logging.getLogger(__name__)
 
 class TranslationService:
     
-    def __init__(self):
-        """Initialize the translation service with empty model cache."""
+    def __init__(self, lazy_loading: bool = False):
+        """
+        Initialize the translation service and optionally load all models.
+        
+        Args:
+            lazy_loading: If True, models will be loaded on first use.
+                         If False (default), all models will be loaded at initialization.
+        """
         self._models: Dict[str, MarianMTModel] = {}
         self._tokenizers: Dict[str, MarianTokenizer] = {}
         self._device = "cuda" if torch.cuda.is_available() else "cpu"
+        
+        if not lazy_loading:
+            self._load_all_models()
         logger.info(f"Translation service initialized with device: {self._device}")
+    
+    def _load_all_models(self) -> None:
+        """Load all supported translation models."""
+        logger.info("Loading all supported translation models...")
+        for language_pair in SUPPORTED_MODELS.keys():
+            try:
+                self._load_model(language_pair)
+            except Exception as e:
+                logger.error(f"Failed to load model for {language_pair}: {str(e)}")
+                raise Exception(f"Failed to initialize translation service: {str(e)}")
     
     def _load_model(self, language_pair: str) -> None:
         """

@@ -32,9 +32,28 @@ service for text translation using HelsinkiNLP MarianMT models from HuggingFace.
    ```
 
 4. **Run the application**:
-   ```bash
-   uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
-   ```
+
+   The application supports two model loading strategies:
+   
+   - **Default (Eager Loading)**: All translation models are loaded at startup
+     ```bash
+     uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+     ```
+
+   - **Lazy Loading**: Models are loaded on first use
+     ```bash
+     TRANSLATION_LAZY_LOADING=true uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+     ```
+
+   Choose eager loading (default) for:
+   - Consistent response times
+   - Early detection of model loading issues
+   - Production environments
+
+   Choose lazy loading for:
+   - Faster startup time
+   - Development environments
+   - Memory optimization when not all models are needed
 
 ## API Endpoints
 
