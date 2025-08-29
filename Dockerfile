@@ -19,10 +19,16 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy application code
 COPY app/ ./app/
 
-# Create non-root user for security
+# Create non-root user and set up directories
 RUN useradd --create-home --shell /bin/bash appuser && \
-    chown -R appuser:appuser /app
+    chown -R appuser:appuser /app && \
+    mkdir -p /home/appuser/.cache && \
+    chown -R appuser:appuser /home/appuser/.cache
+
 USER appuser
+
+# Create Hugging Face cache directory with correct permissions
+RUN mkdir -p /home/appuser/.cache/huggingface
 
 # Expose port
 EXPOSE 8000
