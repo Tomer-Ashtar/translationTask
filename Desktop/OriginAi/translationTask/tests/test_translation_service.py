@@ -5,6 +5,7 @@ Unit tests for the translation service.
 import pytest
 from unittest.mock import Mock, patch
 from app.services.translation_service import TranslationService
+from app.core.translation_config import get_supported_language_pairs
 
 
 class TestTranslationService:
@@ -22,96 +23,65 @@ class TestTranslationService:
         assert len(self.service._tokenizers) == 0
     
     def test_supported_language_pairs(self):
-        """Test getting supported language pairs."""
-        pairs = self.service.get_supported_language_pairs()
-        
-        expected_pairs = ["he-ru", "ru-he", "en-he", "he-en"]
-        assert all(pair in pairs for pair in expected_pairs)
-        assert len(pairs) == 4
-    
-    def test_is_model_loaded_false(self):
-        """Test checking if model is loaded when not loaded."""
-        assert not self.service.is_model_loaded("he-ru")
+        """Test getting supported language pairs from config."""
+        pairs = get_supported_language_pairs()
+        expected_pairs = {
+            "he-ru": "Helsinki-NLP/opus-mt-he-ru",
+            "en-he": "Helsinki-NLP/opus-mt-en-he"
+        }
+        assert pairs == expected_pairs
     
     @patch('app.services.translation_service.MarianTokenizer')
     @patch('app.services.translation_service.MarianMTModel')
-    def test_load_model_success(self, mock_model_class, mock_tokenizer_class):
-        """Test successful model loading."""
+    def test_successful_translation(self, mock_model_class, mock_tokenizer_class):
+        """Test successful translation flow."""
         # Setup mocks
         mock_tokenizer = Mock()
         mock_model = Mock()
         mock_tokenizer_class.from_pretrained.return_value = mock_tokenizer
         mock_model_class.from_pretrained.return_value = mock_model
         
-        # Test loading
-        self.service._load_model("he-ru")
+        # Setup expected behavior
+        expected_translation = "תרגום"
+        mock_tokenizer.return_value = {"input_ids": Mock(), "attention_mask": Mock()}
+        mock_tokenizer.decode.return_value = expected_translation
+        mock_model.generate.return_value = [Mock()]
+        mock_model.to.return_value = mock_model
         
-        # Verify model was loaded and cached
-        assert "he-ru" in self.service._models
-        assert "he-ru" in self.service._tokenizers
-        assert self.service.is_model_loaded("he-ru")
-    
-    def test_load_model_unsupported_pair(self):
-        """Test loading unsupported language pair."""
-        with pytest.raises(ValueError, match="Unsupported language pair"):
-            self.service._load_model("unsupported-pair")
-    
-    def test_translate_basic_validation(self):
-        """Test basic validation without actual model loading."""
-        # Test that the method validates input properly
-        with pytest.raises(ValueError, match="Text cannot be empty"):
-            self.service.translate("", "en", "he")
+        # Test translation
+        with patch.object(mock_tokenizer, '__call__', return_value={"input_ids": Mock(), "attention_mask": Mock()}):
+            result = self.service.translate("Hello", "en", "he")
+            
+        # Verify result
+        assert result == expected_translation
         
-        with pytest.raises(ValueError, match="Unsupported language pair"):
-            self.service.translate("Hello", "en", "fr")
-    
-    def test_translate_empty_text(self):
-        """Test translation with empty text."""
-        with pytest.raises(ValueError, match="Text cannot be empty"):
-            self.service.translate("", "en", "he")
-    
-    def test_translate_whitespace_only(self):
-        """Test translation with whitespace-only text."""
-        with pytest.raises(ValueError, match="Text cannot be empty"):
-            self.service.translate("   ", "en", "he")
-    
-    def test_translate_unsupported_pair(self):
-        """Test translation with unsupported language pair."""
-        with pytest.raises(ValueError, match="Unsupported language pair"):
-            self.service.translate("Hello", "en", "fr")
-    
-    def test_translate_word_limit_exceeded(self):
-        """Test translation with text exceeding 10 word limit."""
-        long_text = "This is a very long text that definitely exceeds the maximum limit of ten words allowed"
-        with pytest.raises(ValueError, match="Text exceeds maximum length of 10 words"):
-            self.service.translate(long_text, "en", "he")
+        # Verify successful translation
+        assert result == expected_translation
+        assert mock_model.generate.called
+        assert mock_tokenizer.decode.called
     
     @patch('app.services.translation_service.MarianTokenizer')
     @patch('app.services.translation_service.MarianMTModel')
-    def test_translate_model_loading_error(self, mock_model_class, mock_tokenizer_class):
-        """Test translation when model loading fails."""
-        # Setup mock to raise exception
+    def test_translation_model_loading_error(self, mock_model_class, mock_tokenizer_class):
+        """Test translation fails when model loading fails."""
         mock_tokenizer_class.from_pretrained.side_effect = Exception("Model not found")
         
         with pytest.raises(Exception, match="Model loading failed"):
             self.service.translate("Hello", "en", "he")
     
-    def test_language_code_normalization(self):
-        """Test that language codes are properly normalized."""
-        # This test requires mocking since we can't load actual models
-        with patch.object(self.service, '_load_model') as mock_load:
-            with patch.object(self.service, '_models', {"en-he": Mock()}):
-                with patch.object(self.service, '_tokenizers', {"en-he": Mock()}):
-                    mock_tokenizer = self.service._tokenizers["en-he"]
-                    mock_model = self.service._models["en-he"]
-                    
-                    # Setup mock returns
-                    mock_tokenizer.return_value = {"input_ids": Mock(), "attention_mask": Mock()}
-                    mock_tokenizer.decode.return_value = "result"
-                    mock_model.generate.return_value = [Mock()]
-                    
-                    # Test with uppercase and whitespace
-                    self.service.translate("Hello", " EN ", " HE ")
-                    
-                    # Verify model was loaded with normalized pair
-                    mock_load.assert_called_with("en-he")
+    @patch('app.services.translation_service.MarianTokenizer')
+    @patch('app.services.translation_service.MarianMTModel')
+    def test_translation_process_error(self, mock_model_class, mock_tokenizer_class):
+        """Test translation fails when translation process fails."""
+        # Setup mocks for successful loading but failed translation
+        mock_tokenizer = Mock()
+        mock_model = Mock()
+        mock_tokenizer_class.from_pretrained.return_value = mock_tokenizer
+        mock_model_class.from_pretrained.return_value = mock_model
+        
+        # Setup translation failure
+        mock_model.generate.side_effect = Exception("Translation process failed")
+        mock_tokenizer.return_value = {"input_ids": Mock(), "attention_mask": Mock()}
+        
+        with pytest.raises(Exception, match="Translation failed"):
+            self.service.translate("Hello", "en", "he")

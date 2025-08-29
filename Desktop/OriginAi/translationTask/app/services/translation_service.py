@@ -7,7 +7,7 @@ import logging
 from typing import Dict, Optional
 from transformers import MarianMTModel, MarianTokenizer
 import torch
-from app.core.translation_config import SUPPORTED_MODELS
+from app.core.translation_config import SUPPORTED_MODELS, get_supported_language_pairs
 
 logger = logging.getLogger(__name__)
 
