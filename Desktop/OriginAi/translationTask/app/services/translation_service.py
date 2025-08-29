@@ -16,8 +16,6 @@ class TranslationService:
     Service for handling text translation using pre-trained MarianMT models.
     """
 
-    
-    # Model mappings for supported language pairs
     MODEL_MAPPING = {
         "he-ru": "Helsinki-NLP/opus-mt-he-ru",
         "ru-he": "Helsinki-NLP/opus-mt-ru-he", 
