@@ -9,7 +9,7 @@ from fastapi import FastAPI, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.services.translation_service import TranslationService
-from app.core.exceptions import register_exception_handlers
+from app.core.exceptions import register_exception_handlers, ServiceNotAvailableError
 from app.models.schemas import (
     TranslationRequest,
     TranslationResponse,
@@ -70,10 +70,7 @@ register_exception_handlers(app)
 async def health_check():
     """Health check endpoint."""
     if translation_service is None:
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Translation service not initialized"
-        )
+        raise ServiceNotAvailableError("Translation service not initialized")
     
     supported_pairs = list(translation_service.get_supported_language_pairs().keys())
     loaded_models = [
@@ -103,10 +100,7 @@ async def translate_text(request: TranslationRequest):
         HTTPException: If translation fails or service unavailable
     """
     if translation_service is None:
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Translation service not initialized"
-        )
+        raise ServiceNotAvailableError("Translation service not initialized")
     
     try:
         translated_text = translation_service.translate(
@@ -150,10 +144,7 @@ async def translate_batch(request: BatchTranslationRequest):
         HTTPException: If translation fails or service unavailable
     """
     if translation_service is None:
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Translation service not initialized"
-        )
+        raise ServiceNotAvailableError("Translation service not initialized")
     
     try:
         translations = []
@@ -194,10 +185,7 @@ async def translate_batch(request: BatchTranslationRequest):
 async def get_supported_languages():
     """Get information about supported language pairs."""
     if translation_service is None:
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Translation service not initialized"
-        )
+        raise ServiceNotAvailableError("Translation service not initialized")
     
     return {
         "supported_language_pairs": translation_service.get_supported_language_pairs(),
