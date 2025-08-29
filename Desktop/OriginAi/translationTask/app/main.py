@@ -7,9 +7,9 @@ from contextlib import asynccontextmanager
 from typing import Optional
 from fastapi import FastAPI, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
 
 from app.services.translation_service import TranslationService
+from app.core.exceptions import register_exception_handlers
 from app.models.schemas import (
     TranslationRequest,
     TranslationResponse,
@@ -22,7 +22,7 @@ from app.models.schemas import (
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    format="%(asctime)s - %(name)s - %(levelname)s  %(message)s"
 )
 logger = logging.getLogger(__name__)
 
@@ -36,61 +36,35 @@ async def lifespan(app: FastAPI):
     global translation_service
     
     # Startup
-    logger.info("Starting translation service...")
+    logger.info("Starting Translation service...")
     translation_service = TranslationService()
     logger.info("Translation service started successfully")
     
     yield
     
     # Shutdown
-    logger.info("Shutting down translation service...")
+    logger.info("Shutting down Translation service...")
 
 
 # Create FastAPI app
 app = FastAPI(
-    title="OriginAI Translation Service",
+    title="Translation Service",
     description="REST API for text translation using HelsinkiNLP MarianMT models",
     version="1.0.0",
     lifespan=lifespan
 )
 
-# Add CORS middleware
+# Add CORS middleware for web browser compatibility
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # In production, specify actual origins
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_origins=["*"],  # For development. In production: ["https://yourdomain.com"]
+    allow_credentials=False,  # Not needed for this API
+    allow_methods=["GET", "POST"],  # Only methods we actually use
+    allow_headers=["Content-Type", "Authorization"],  # Only headers we need
 )
 
-
-@app.exception_handler(ValueError)
-async def value_error_handler(request, exc):
-    """Handle ValueError exceptions."""
-    return JSONResponse(
-        status_code=status.HTTP_400_BAD_REQUEST,
-        content={"error": "Validation Error", "detail": str(exc)}
-    )
-
-
-@app.exception_handler(Exception)
-async def general_exception_handler(request, exc):
-    """Handle general exceptions."""
-    logger.error(f"Unexpected error: {str(exc)}")
-    return JSONResponse(
-        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-        content={"error": "Internal Server Error", "detail": "An unexpected error occurred"}
-    )
-
-
-@app.get("/", response_model=dict)
-async def root():
-    """Root endpoint with basic API information."""
-    return {
-        "message": "OriginAI Translation Service",
-        "version": "1.0.0",
-        "documentation": "/docs"
-    }
+# Register all exception handlers
+register_exception_handlers(app)
 
 
 @app.get("/health", response_model=HealthResponse)
