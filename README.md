@@ -104,6 +104,7 @@ Returns information about supported language pairs and codes.
         "en": "English"
     }
 }
+```
 ## Running Tests
 
 ### Using Docker (Recommended)
