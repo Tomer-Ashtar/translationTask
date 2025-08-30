@@ -8,13 +8,7 @@ service for text translation using HelsinkiNLP MarianMT models from HuggingFace.
 
 **Prerequisites**: Docker and Docker Compose must be installed on your system.
 
-1. **Clone the repository**:
-   ```bash
-   git clone <your-repo-url>
-   cd translationTask
-   ```
-
-2. **Build and run with Docker Compose**:
+1.  **Build and run with Docker Compose**:
    ```bash
    docker-compose up --build
    ```
