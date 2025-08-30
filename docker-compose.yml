@@ -19,6 +19,19 @@ services:
       retries: 3
       start_period: 60s
 
+  # Test service for running tests
+  test:
+    build: .
+    environment:
+      - PYTHONPATH=/app
+      - TRANSLATION_LAZY_LOADING=true  # Use lazy loading for faster test startup
+    volumes:
+      - model-cache:/home/appuser/.cache/huggingface
+    user: appuser
+    command: python -m pytest -v
+    profiles:
+      - test
+
 volumes:
   model-cache:
     driver: local
