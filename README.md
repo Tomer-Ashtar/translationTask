@@ -18,8 +18,6 @@ service for text translation using HelsinkiNLP MarianMT models from HuggingFace.
    - Download required Python packages and ML models
    - Start the translation service
    
-   **Note**: First run may take 5-10 minutes to download models.
-
 3. **The API will be available at**: `http://localhost:8000`
 
 4. **View API documentation**: `http://localhost:8000/docs`
@@ -112,7 +110,7 @@ Returns information about supported language pairs and codes.
 
 Run tests in Docker containers to ensure consistency across environments:
 
-#### **Method 1: Dedicated Test Container (Best for CI/CD and clean testing)**
+#### **Method 1: Dedicated Test Container**
 ```bash
 # Run all tests in a separate, clean container
 docker-compose --profile test run --rm test
