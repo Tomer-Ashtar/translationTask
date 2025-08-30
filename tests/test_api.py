@@ -133,7 +133,7 @@ class TestTranslationAPI:
     def test_supported_languages(self, mock_service):
         """Test supported languages endpoint."""
         # Create random supported language pairs
-        random_pairs = dict(random.sample(SUPPORTED_MODELS.items(), k=len(SUPPORTED_MODELS)))
+        random_pairs = dict(random.sample(list(SUPPORTED_MODELS.items()), k=len(SUPPORTED_MODELS)))
         mock_service.get_supported_language_pairs.return_value = random_pairs
         
         response = self.client.get("/translations/supported_languages")

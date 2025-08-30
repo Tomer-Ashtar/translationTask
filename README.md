@@ -6,15 +6,35 @@ service for text translation using HelsinkiNLP MarianMT models from HuggingFace.
 
 ### Using Docker (Recommended)
 
+**Prerequisites**: Docker and Docker Compose must be installed on your system.
 
-1. **Build and run with Docker Compose**:
+1. **Clone the repository**:
+   ```bash
+   git clone <your-repo-url>
+   cd translationTask
+   ```
+
+2. **Build and run with Docker Compose**:
    ```bash
    docker-compose up --build
    ```
+   
+   This command will:
+   - Build the Docker image
+   - Download required Python packages and ML models
+   - Start the translation service
+   
+   **Note**: First run may take 5-10 minutes to download models.
 
 3. **The API will be available at**: `http://localhost:8000`
 
 4. **View API documentation**: `http://localhost:8000/docs`
+
+5. **To stop the service**:
+   ```bash
+   # Press Ctrl+C in the terminal, or run in another terminal:
+   docker-compose down
+   ```
 
 ### Local Development
 
@@ -92,9 +112,27 @@ Returns information about supported language pairs and codes.
         "en": "English"
     }
 }
-### Running Tests
+## Running Tests
 
-Before running the tests, make sure you have activated the virtual environment:
+### Using Docker (Recommended)
+
+Run tests in Docker containers to ensure consistency across environments:
+
+#### **Method 1: Dedicated Test Container (Best for CI/CD and clean testing)**
+```bash
+# Run all tests in a separate, clean container
+docker-compose --profile test run --rm test
+
+# Run tests with verbose output
+docker-compose --profile test run --rm test python -m pytest -v
+
+# Run specific test file
+docker-compose --profile test run --rm test python -m pytest tests/test_api.py -v
+```
+
+### Local Development Testing
+
+Before running the tests locally, make sure you have activated the virtual environment:
 
 ```bash
 # Activate the virtual environment (IMPORTANT!)
@@ -117,4 +155,5 @@ python -m pytest tests/test_translation_service.py
 
 # Run specific test file with verbose output
 python -m pytest tests/test_translation_service.py -v
+```
 
